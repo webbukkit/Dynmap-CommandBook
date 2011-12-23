@@ -1,0 +1,34 @@
+# Dynmap-CommandBook configuration
+#
+update:
+  # Seconds between position updates
+  period: 5.0
+  
+layer:
+  homes:
+    enable: true
+    name: "Homes"
+    # Make home layer hidden by default
+    hidebydefault: false
+    # ordering priority in layer menu (low goes before high - default is 0)
+    layerprio: 20
+    # (optional) set minimum zoom level when mob icons should be visible (0=default, any zoom)
+    minzoom: 0
+    # Default icon for home markers
+    deficon: house
+    # Label format - substitute %name% for player's name
+    labelfmt: "%name%(home)"
+  warps:
+    enable: true
+    name: "Homes"
+    # Make warp layer hidden by default
+    hidebydefault: false
+    # ordering priority in layer menu (low goes before high - default is 0)
+    layerprio: 21
+    # (optional) set minimum zoom level when mob icons should be visible (0=default, any zoom)
+    minzoom: 0
+    # Default icon for warp markers
+    deficon: portal
+    # Label format - substitute %name% for warp's name
+    labelfmt: "[%name%]"
+  
