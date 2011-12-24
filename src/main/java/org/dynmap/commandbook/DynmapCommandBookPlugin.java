@@ -1,8 +1,10 @@
 package org.dynmap.commandbook;
 import java.io.InputStream;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -42,14 +44,114 @@ public class DynmapCommandBookPlugin extends JavaPlugin {
     RootLocationManager<NamedLocation> warpsmgr;
     
     FileConfiguration cfg;
+    
+    private class Layer {
+        MarkerSet set;
+        MarkerIcon deficon;
+        String labelfmt;
+        Set<String> visible;
+        Set<String> hidden;
+        Map<String, Marker> markers = new HashMap<String, Marker>();
+        
+        public Layer(String id, FileConfiguration cfg, String deflabel, String deficon, String deflabelfmt) {
+            set = markerapi.getMarkerSet("commandbook." + id);
+            if(set == null)
+                set = markerapi.createMarkerSet("commandbook."+id, cfg.getString("layer."+id+".name", deflabel), null, false);
+            else
+                set.setMarkerSetLabel(cfg.getString("layer."+id+".name", deflabel));
+            if(set == null) {
+                severe("Error creating " + deflabel + " marker set");
+                return;
+            }
+            set.setLayerPriority(cfg.getInt("layer."+id+".layerprio", 10));
+            set.setHideByDefault(cfg.getBoolean("layer."+id+".hidebydefault", false));
+            int minzoom = cfg.getInt("layer."+id+".minzoom", 0);
+            if(minzoom > 0) /* Don't call if non-default - lets us work with pre-0.28 dynmap */
+                set.setMinZoom(minzoom);
+            String icon = cfg.getString("layer."+id+".deficon", deficon);
+            this.deficon = markerapi.getMarkerIcon(icon);
+            if(this.deficon == null) {
+                info("Unable to load default icon '" + icon + "' - using default '"+deficon+"'");
+                this.deficon = markerapi.getMarkerIcon(deficon);
+            }
+            labelfmt = cfg.getString("layer."+id+".labelfmt", deflabelfmt);
+            List<String> lst = cfg.getStringList("layer."+id+".visiblemarkers");
+            if(lst != null)
+                visible = new HashSet<String>(lst);
+            lst = cfg.getStringList("layer."+id+".hiddenmarkers");
+            if(lst != null)
+                hidden = new HashSet<String>(lst);
+        }
+        
+        void cleanup() {
+            if(set != null) {
+                set.deleteMarkerSet();
+                set = null;
+            }
+            markers.clear();
+        }
+        
+        boolean isVisible(String id, String wname) {
+            if((visible != null) && (visible.isEmpty() == false)) {
+                if((visible.contains(id) == false) && (visible.contains("world:" + wname) == false))
+                    return false;
+            }
+            if((hidden != null) && (hidden.isEmpty() == false)) {
+                if(hidden.contains(id) || hidden.contains("world:" + wname))
+                    return false;
+            }
+            return true;
+        }
+        
+        void updateMarkerSet(RootLocationManager<NamedLocation> mgr) {
+            Map<String, Marker> newmap = new HashMap<String, Marker>(); /* Build new map */
+            /* For each world */
+            for(World w : getServer().getWorlds()) {
+                String wname = w.getName();
+                List<NamedLocation> loclist = mgr.getLocations(w);  /* Get locations in this world */
+                if(loclist == null) continue;
+                
+                for(NamedLocation nl : loclist) {
+                    int i;
+                    /* Get name */
+                    String name = nl.getName();
+                    /* Skip if not visible */
+                    if(isVisible(name, wname) == false)
+                        continue;
+                    /* Get location */
+                    Location loc = nl.getLocation();
+                    String id = wname + "/" + name;
+
+                    String label = labelfmt.replaceAll("%name%", name);
+                    
+                    /* See if we already have marker */
+                    Marker m = markers.remove(id);
+                    if(m == null) { /* Not found?  Need new one */
+                        m = set.createMarker(id, label, wname, loc.getX(), loc.getY(), loc.getZ(), deficon, false);
+                    }
+                    else {  /* Else, update position if needed */
+                        m.setLocation(wname, loc.getX(), loc.getY(), loc.getZ());
+                        m.setLabel(label);
+                        m.setMarkerIcon(deficon);
+                    }
+                    newmap.put(id, m);    /* Add to new map */
+                }
+            }
+            /* Now, review old map - anything left is gone */
+            for(Marker oldm : markers.values()) {
+                oldm.deleteMarker();
+            }
+            /* And replace with new map */
+            markers.clear();
+            markers = newmap;
+        }
+    }
+    
     /* Homes layer settings */
-    MarkerSet homesset;
-    MarkerIcon homedef;
-    String homelabelfmt;
+    private Layer homelayer;
+    
     /* Warps layer settings */
-    MarkerSet warpsset;
-    MarkerIcon warpsdef;
-    String warplabelfmt;
+    private Layer warplayer;
     
     long updperiod;
     boolean stop;
@@ -68,58 +170,18 @@ public class DynmapCommandBookPlugin extends JavaPlugin {
         }
     }
     
-    private Map<String, Marker> homes = new HashMap<String, Marker>();
-    private Map<String, Marker> warps = new HashMap<String, Marker>();
-    
     /* Update mob population and position */
     private void updateMarkers() {
         if(homesmgr != null) {
-            updateMarkerSet(homes, homesset, homesmgr, homedef, homelabelfmt);
+            homelayer.updateMarkerSet(homesmgr);
         }
         if(warpsmgr != null) {
-            updateMarkerSet(warps, warpsset, warpsmgr, warpsdef, warplabelfmt);
+            warplayer.updateMarkerSet(warpsmgr);
         }
         getServer().getScheduler().scheduleSyncDelayedTask(this, new MarkerUpdate(), updperiod);
     }
     
-    private void updateMarkerSet(Map<String, Marker> markers, MarkerSet set, RootLocationManager<NamedLocation> mgr, MarkerIcon deficon, String labelfmt) {
-        Map<String, Marker> newmap = new HashMap<String, Marker>(); /* Build new map */
-        /* For each world */
-        for(World w : getServer().getWorlds()) {
-            List<NamedLocation> loclist = mgr.getLocations(w);  /* Get locations in this world */
-            if(loclist == null) continue;
-            
-            for(NamedLocation nl : loclist) {
-                int i;
-                /* Get name and location */
-                String name = nl.getName();
-                Location loc = nl.getLocation();
-                String id = w.getName() + "/" + name;
 
-                String label = labelfmt.replaceAll("%name%", name);
-                
-                /* See if we already have marker */
-                Marker m = markers.remove(id);
-                if(m == null) { /* Not found?  Need new one */
-                    m = set.createMarker(id, label, w.getName(), loc.getX(), loc.getY(), loc.getZ(), deficon, false);
-                }
-                else {  /* Else, update position if needed */
-                    m.setLocation(w.getName(), loc.getX(), loc.getY(), loc.getZ());
-                    m.setLabel(label);
-                    m.setMarkerIcon(deficon);
-                }
-                newmap.put(id, m);    /* Add to new map */
-            }
-        }
-        /* Now, review old map - anything left is gone */
-        for(Marker oldm : markers.values()) {
-            oldm.deleteMarker();
-        }
-        markers.clear();
-        /* And replace with new map */
-        markers.clear();
-        markers.putAll(newmap);
-    }
 
     private class OurServerListener extends ServerListener {
         @Override
@@ -185,53 +247,11 @@ public class DynmapCommandBookPlugin extends JavaPlugin {
             warpsmgr = null;
         
         /* Now, add marker set for homes */
-        if(homesmgr != null) {
-            homesset = markerapi.getMarkerSet("commandbook.homes");
-            if(homesset == null)
-                homesset = markerapi.createMarkerSet("commandbook.homes", cfg.getString("layer.homes.name", "Homes"), null, false);
-            else
-                homesset.setMarkerSetLabel(cfg.getString("layer.homes.name", "Homes"));
-            if(homesset == null) {
-                severe("Error creating homes marker set");
-                return;
-            }
-            homesset.setLayerPriority(cfg.getInt("layer.homes.layerprio", 10));
-            homesset.setHideByDefault(cfg.getBoolean("layer.homes.hidebydefault", false));
-            int minzoom = cfg.getInt("layer.homes.minzoom", 0);
-            if(minzoom > 0) /* Don't call if non-default - lets us work with pre-0.28 dynmap */
-                homesset.setMinZoom(minzoom);
-            String deficon = cfg.getString("layer.homes.deficon", "house");
-            homedef = markerapi.getMarkerIcon(deficon);
-            if(homedef == null) {
-                info("Unable to load default icon '" + deficon + "' - using default 'house'");
-                homedef = markerapi.getMarkerIcon("house");
-            }
-            homelabelfmt = cfg.getString("layer.homes.labelfmt", "%name%(home)");
-        }
+        if(homesmgr != null)
+            homelayer = new Layer("homes", cfg, "Homes", "house", "%name%(home)");
         /* Now, add marker set for warps */
-        if(warpsmgr != null) {
-            warpsset = markerapi.getMarkerSet("commandbook.warps");
-            if(warpsset == null)
-                warpsset = markerapi.createMarkerSet("commandbook.warps", cfg.getString("layer.warps.name", "Warps"), null, false);
-            else
-                warpsset.setMarkerSetLabel(cfg.getString("layer.warps.name", "Warps"));
-            if(warpsset == null) {
-                severe("Error creating warps marker set");
-                return;
-            }
-            warpsset.setLayerPriority(cfg.getInt("layer.warps.layerprio", 10));
-            warpsset.setHideByDefault(cfg.getBoolean("layer.warps.hidebydefault", false));
-            int minzoom = cfg.getInt("layer.warps.minzoom", 0);
-            if(minzoom > 0) /* Don't call if non-default - lets us work with pre-0.28 dynmap */
-                warpsset.setMinZoom(minzoom);
-            String deficon = cfg.getString("layer.warps.deficon", "portal");
-            warpsdef = markerapi.getMarkerIcon(deficon);
-            if(warpsdef == null) {
-                info("Unable to load default icon '" + deficon + "' - using default 'portal'");
-                warpsdef = markerapi.getMarkerIcon("portal");
-            }
-            warplabelfmt = cfg.getString("layer.warps.labelfmt", "[%name%]");
-        }
+        if(warpsmgr != null)
+            warplayer = new Layer("warps", cfg, "Warps", "portal", "[%name%]");
         
         /* Set up update job - based on periond */
         double per = cfg.getDouble("update.period", 5.0);
@@ -244,13 +264,13 @@ public class DynmapCommandBookPlugin extends JavaPlugin {
     }
 
     public void onDisable() {
-        if(homesset != null) {
-            homesset.deleteMarkerSet();
-            homesset = null;
+        if(homelayer != null) {
+            homelayer.cleanup();
+            homelayer = null;
         }
-        if(warpsset != null) {
-            warpsset.deleteMarkerSet();
-            warpsset = null;
+        if(warplayer != null) {
+            warplayer.cleanup();
+            warplayer = null;
         }
         stop = true;
     }

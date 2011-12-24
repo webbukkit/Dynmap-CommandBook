@@ -18,6 +18,12 @@ layer:
     deficon: house
     # Label format - substitute %name% for player's name
     labelfmt: "%name%(home)"
+    # (optional) List of visible homes (by user ID) - if non-empty, only these will be shown.
+    # To show all homes on a given world, include "world:<worldname>" in the string list
+    visiblemarkers: []
+    # (optional) List of hidden homes (by user ID)
+    # To hide all homes on a given world, include "world:<worldname>" in the string list
+    hiddenmarkers: []
   warps:
     enable: true
     name: "Warps"
@@ -31,4 +37,10 @@ layer:
     deficon: portal
     # Label format - substitute %name% for warp's name
     labelfmt: "[%name%]"
+    # (optional) List of visible warps (by warp ID) - if non-empty, only these will be shown.
+    # To show all warps on a given world, include "world:<worldname>" in the string list
+    visiblemarkers: []
+    # (optional) List of hidden warps (by warp ID)
+    # To hide all warps on a given world, include "world:<worldname>" in the string list
+    hiddenmarkers: []
   
