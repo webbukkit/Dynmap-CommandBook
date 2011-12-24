@@ -2,7 +2,7 @@
 #
 update:
   # Seconds between position updates
-  period: 5.0
+  period: 300.0
   
 layer:
   homes:
