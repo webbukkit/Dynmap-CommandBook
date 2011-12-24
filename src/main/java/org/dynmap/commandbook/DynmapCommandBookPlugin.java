@@ -180,16 +180,15 @@ public class DynmapCommandBookPlugin extends JavaPlugin {
         }
         getServer().getScheduler().scheduleSyncDelayedTask(this, new MarkerUpdate(), updperiod);
     }
-    
-
 
     private class OurServerListener extends ServerListener {
         @Override
         public void onPluginEnable(PluginEnableEvent event) {
             Plugin p = event.getPlugin();
             String name = p.getDescription().getName();
-            if(name.equals("dynmap")) {
-                activate();
+            if(name.equals("dynmap") || name.equals("CommandBook")) {
+                if(dynmap.isEnabled() && commandbook.isEnabled())
+                    activate();
             }
         }
     }
