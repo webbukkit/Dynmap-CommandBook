@@ -20,7 +20,7 @@ layer:
     labelfmt: "%name%(home)"
   warps:
     enable: true
-    name: "Homes"
+    name: "Warps"
     # Make warp layer hidden by default
     hidebydefault: false
     # ordering priority in layer menu (low goes before high - default is 0)
