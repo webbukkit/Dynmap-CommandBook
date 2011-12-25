@@ -1,5 +1,4 @@
 package org.dynmap.commandbook;
-import java.io.InputStream;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -9,14 +8,13 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import org.bukkit.Location;
-import org.bukkit.OfflinePlayer;
 import org.bukkit.World;
 import org.bukkit.configuration.file.FileConfiguration;
-import org.bukkit.entity.AnimalTamer;
-import org.bukkit.entity.LivingEntity;
-import org.bukkit.entity.Wolf;
 import org.bukkit.event.Event.Priority;
 import org.bukkit.event.Event.Type;
+import org.bukkit.event.player.PlayerJoinEvent;
+import org.bukkit.event.player.PlayerListener;
+import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.event.server.PluginEnableEvent;
 import org.bukkit.event.server.ServerListener;
 import org.bukkit.plugin.java.JavaPlugin;
@@ -44,7 +42,23 @@ public class DynmapCommandBookPlugin extends JavaPlugin {
     RootLocationManager<NamedLocation> warpsmgr;
     
     FileConfiguration cfg;
-    
+
+    private class OurPlayerListener extends PlayerListener implements Runnable {
+        @Override
+        public void onPlayerJoin(PlayerJoinEvent event) {
+            getServer().getScheduler().scheduleSyncDelayedTask(DynmapCommandBookPlugin.this, this, 10);
+        }
+        @Override
+        public void onPlayerQuit(PlayerQuitEvent event) {
+            getServer().getScheduler().scheduleSyncDelayedTask(DynmapCommandBookPlugin.this, this, 10);
+        }
+        public void run() {
+            if((!stop) && (homesmgr != null)) {
+                homelayer.updateMarkerSet(homesmgr);
+            }
+        }
+    }
+
     private class Layer {
         MarkerSet set;
         MarkerIcon deficon;
@@ -52,6 +66,7 @@ public class DynmapCommandBookPlugin extends JavaPlugin {
         Set<String> visible;
         Set<String> hidden;
         Map<String, Marker> markers = new HashMap<String, Marker>();
+        boolean online_only;
         
         public Layer(String id, FileConfiguration cfg, String deflabel, String deficon, String deflabelfmt) {
             set = markerapi.getMarkerSet("commandbook." + id);
@@ -81,6 +96,13 @@ public class DynmapCommandBookPlugin extends JavaPlugin {
             lst = cfg.getStringList("layer."+id+".hiddenmarkers");
             if(lst != null)
                 hidden = new HashSet<String>(lst);
+            online_only = cfg.getBoolean("layer."+id+".online-only", false);
+            if(online_only) {
+                OurPlayerListener lsnr = new OurPlayerListener();
+                
+                getServer().getPluginManager().registerEvent(Type.PLAYER_JOIN, lsnr, Priority.Monitor, DynmapCommandBookPlugin.this);
+                getServer().getPluginManager().registerEvent(Type.PLAYER_QUIT, lsnr, Priority.Monitor, DynmapCommandBookPlugin.this);
+            }
         }
         
         void cleanup() {
@@ -117,6 +139,9 @@ public class DynmapCommandBookPlugin extends JavaPlugin {
                     String name = nl.getName();
                     /* Skip if not visible */
                     if(isVisible(name, wname) == false)
+                        continue;
+                    /* If online only, check if player is online */
+                    if(online_only && (getServer().getPlayerExact(name) == null))
                         continue;
                     /* Get location */
                     Location loc = nl.getLocation();
