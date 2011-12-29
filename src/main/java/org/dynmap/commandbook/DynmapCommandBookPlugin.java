@@ -147,7 +147,7 @@ public class DynmapCommandBookPlugin extends JavaPlugin {
                     Location loc = nl.getLocation();
                     String id = wname + "/" + name;
 
-                    String label = labelfmt.replaceAll("%name%", name);
+                    String label = labelfmt.replace("%name%", name);
                     
                     /* See if we already have marker */
                     Marker m = markers.remove(id);
