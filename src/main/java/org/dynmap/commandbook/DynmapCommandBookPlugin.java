@@ -135,6 +135,11 @@ public class DynmapCommandBookPlugin extends JavaPlugin {
                 
                 for(NamedLocation nl : loclist) {
                     int i;
+                    /* Get location */
+                    Location loc = nl.getLocation();
+                    /* If not world specific list, we may get locations for other worlds - skip them */
+                    if(loc.getWorld() != w)
+                        continue;
                     /* Get name */
                     String name = nl.getName();
                     /* Skip if not visible */
@@ -143,8 +148,6 @@ public class DynmapCommandBookPlugin extends JavaPlugin {
                     /* If online only, check if player is online */
                     if(online_only && (getServer().getPlayerExact(name) == null))
                         continue;
-                    /* Get location */
-                    Location loc = nl.getLocation();
                     String id = wname + "/" + name;
 
                     String label = labelfmt.replace("%name%", name);
