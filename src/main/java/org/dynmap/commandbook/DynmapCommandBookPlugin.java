@@ -26,9 +26,11 @@ import org.dynmap.markers.MarkerIcon;
 import org.dynmap.markers.MarkerSet;
 import org.dynmap.markers.Marker;
 
-import com.sk89q.commandbook.CommandBookPlugin;
+import com.sk89q.commandbook.CommandBook;
 import com.sk89q.commandbook.locations.NamedLocation;
 import com.sk89q.commandbook.locations.RootLocationManager;
+import com.sk89q.commandbook.locations.HomesComponent;
+import com.sk89q.commandbook.locations.WarpsComponent;
 
 public class DynmapCommandBookPlugin extends JavaPlugin {
     private static final Logger log = Logger.getLogger("Minecraft");
@@ -37,7 +39,7 @@ public class DynmapCommandBookPlugin extends JavaPlugin {
     Plugin dynmap;
     DynmapAPI api;
     MarkerAPI markerapi;
-    CommandBookPlugin commandbook;
+    CommandBook commandbook;
     RootLocationManager<NamedLocation> homesmgr;
     RootLocationManager<NamedLocation> warpsmgr;
     
@@ -237,7 +239,7 @@ public class DynmapCommandBookPlugin extends JavaPlugin {
             severe("Cannot find CommandBook!");
             return;
         }
-        commandbook = (CommandBookPlugin)p;
+        commandbook = (CommandBook)p;
         /* If both enabled, activate */
         if(dynmap.isEnabled() && commandbook.isEnabled())
             activate();
@@ -253,12 +255,14 @@ public class DynmapCommandBookPlugin extends JavaPlugin {
             return;
         }
         /* Now, get the commandbook homes API */
-        homesmgr = commandbook.getHomesManager();
+        //homesmgr = commandbook.getHomesManager();
+        homesmgr = commandbook.getComponentManager().getComponent(HomesComponent.class).getManager();
         /* If not found, signal disabled */
         if(homesmgr == null)
             info("CommandBook Homes not found - support disabled");
         /* Get the commandbook warps API */
-        warpsmgr = commandbook.getWarpsManager();
+        //warpsmgr = commandbook.getWarpsManager();
+        warpsmgr = commandbook.getComponentManager().getComponent(WarpsComponent.class).getManager();
         if(warpsmgr == null)
             info("CommandBook Warps not found - support disabled");
             
