@@ -54,19 +54,19 @@
   	<dependency>
   		<groupId>org.bukkit</groupId>
   		<artifactId>bukkit</artifactId>
-  		<version>[1.0.1-R1-SNAPSHOT,)</version>
+  		<version>[1.0.1-R2-SNAPSHOT,)</version>
   		<scope>compile</scope>
   	</dependency>
   	<dependency>
   		<groupId>org.dynmap</groupId>
   		<artifactId>dynmap-api</artifactId>
-  		<version>[0.28,)</version>
+  		<version>[0.29,)</version>
   		<scope>compile</scope>
   	</dependency>
   	<dependency>
   		<groupId>com.sk89q</groupId>
   		<artifactId>CommandBook</artifactId>
-  		<version>1.7</version>
+  		<version>1.8-SNAPSHOT</version>
   		<scope>system</scope>
   		<systemPath>${project.basedir}/CommandBook.jar</systemPath>
   	</dependency>
