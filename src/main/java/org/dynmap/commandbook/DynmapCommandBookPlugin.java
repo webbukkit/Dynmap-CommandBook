@@ -31,6 +31,8 @@ import com.sk89q.commandbook.locations.NamedLocation;
 import com.sk89q.commandbook.locations.RootLocationManager;
 import com.sk89q.commandbook.locations.HomesComponent;
 import com.sk89q.commandbook.locations.WarpsComponent;
+import com.zachsthings.libcomponents.ComponentManager;
+import com.zachsthings.libcomponents.bukkit.BukkitComponent;
 
 public class DynmapCommandBookPlugin extends JavaPlugin {
     private static final Logger log = Logger.getLogger("Minecraft");
@@ -255,14 +257,21 @@ public class DynmapCommandBookPlugin extends JavaPlugin {
             return;
         }
         /* Now, get the commandbook homes API */
-        //homesmgr = commandbook.getHomesManager();
-        homesmgr = commandbook.getComponentManager().getComponent(HomesComponent.class).getManager();
+        ComponentManager<BukkitComponent> cm = commandbook.getComponentManager();
+        if(cm != null) {
+            HomesComponent homes = cm.getComponent(HomesComponent.class);
+            if(homes != null) {
+                homesmgr = homes.getManager();
+            }
+            WarpsComponent warps = cm.getComponent(WarpsComponent.class);
+            if(warps != null) {
+                warpsmgr = warps.getManager();
+            }
+        }
         /* If not found, signal disabled */
         if(homesmgr == null)
             info("CommandBook Homes not found - support disabled");
-        /* Get the commandbook warps API */
-        //warpsmgr = commandbook.getWarpsManager();
-        warpsmgr = commandbook.getComponentManager().getComponent(WarpsComponent.class).getManager();
+
         if(warpsmgr == null)
             info("CommandBook Warps not found - support disabled");
             
