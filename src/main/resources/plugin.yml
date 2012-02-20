@@ -2,5 +2,5 @@ name: Dynmap-CommandBook
 main: org.dynmap.commandbook.DynmapCommandBookPlugin
 version: "${project.version}"
 author: mikeprimm
-softdepend: [ dynmap, CommandBook ]
+depend: [ dynmap, CommandBook ]
 

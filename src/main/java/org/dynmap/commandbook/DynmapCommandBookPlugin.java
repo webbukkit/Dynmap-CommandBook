@@ -10,13 +10,12 @@ import java.util.logging.Logger;
 import org.bukkit.Location;
 import org.bukkit.World;
 import org.bukkit.configuration.file.FileConfiguration;
-import org.bukkit.event.Event.Priority;
-import org.bukkit.event.Event.Type;
+import org.bukkit.event.EventHandler;
+import org.bukkit.event.EventPriority;
+import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerJoinEvent;
-import org.bukkit.event.player.PlayerListener;
 import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.event.server.PluginEnableEvent;
-import org.bukkit.event.server.ServerListener;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.PluginManager;
@@ -47,12 +46,14 @@ public class DynmapCommandBookPlugin extends JavaPlugin {
     
     FileConfiguration cfg;
 
-    private class OurPlayerListener extends PlayerListener implements Runnable {
-        @Override
+    private class OurPlayerListener implements Listener, Runnable {
+        @SuppressWarnings("unused")
+        @EventHandler(priority=EventPriority.MONITOR)
         public void onPlayerJoin(PlayerJoinEvent event) {
             getServer().getScheduler().scheduleSyncDelayedTask(DynmapCommandBookPlugin.this, this, 10);
         }
-        @Override
+        @SuppressWarnings("unused")
+        @EventHandler(priority=EventPriority.MONITOR)
         public void onPlayerQuit(PlayerQuitEvent event) {
             getServer().getScheduler().scheduleSyncDelayedTask(DynmapCommandBookPlugin.this, this, 10);
         }
@@ -104,8 +105,7 @@ public class DynmapCommandBookPlugin extends JavaPlugin {
             if(online_only) {
                 OurPlayerListener lsnr = new OurPlayerListener();
                 
-                getServer().getPluginManager().registerEvent(Type.PLAYER_JOIN, lsnr, Priority.Monitor, DynmapCommandBookPlugin.this);
-                getServer().getPluginManager().registerEvent(Type.PLAYER_QUIT, lsnr, Priority.Monitor, DynmapCommandBookPlugin.this);
+                getServer().getPluginManager().registerEvents(lsnr, DynmapCommandBookPlugin.this);
             }
         }
         
@@ -138,7 +138,6 @@ public class DynmapCommandBookPlugin extends JavaPlugin {
                 if(loclist == null) continue;
                 
                 for(NamedLocation nl : loclist) {
-                    int i;
                     /* Get location */
                     Location loc = nl.getLocation();
                     /* If not world specific list, we may get locations for other worlds - skip them */
@@ -213,8 +212,9 @@ public class DynmapCommandBookPlugin extends JavaPlugin {
         getServer().getScheduler().scheduleSyncDelayedTask(this, new MarkerUpdate(), updperiod);
     }
 
-    private class OurServerListener extends ServerListener {
-        @Override
+    private class OurServerListener implements Listener {
+        @SuppressWarnings("unused")
+        @EventHandler(priority=EventPriority.MONITOR)
         public void onPluginEnable(PluginEnableEvent event) {
             Plugin p = event.getPlugin();
             String name = p.getDescription().getName();
@@ -242,11 +242,12 @@ public class DynmapCommandBookPlugin extends JavaPlugin {
             return;
         }
         commandbook = (CommandBook)p;
+
+        getServer().getPluginManager().registerEvents(new OurServerListener(), this);        
+
         /* If both enabled, activate */
         if(dynmap.isEnabled() && commandbook.isEnabled())
             activate();
-        else
-            getServer().getPluginManager().registerEvent(Type.PLUGIN_ENABLE, new OurServerListener(), Priority.Monitor, this);        
     }
 
     private void activate() {
