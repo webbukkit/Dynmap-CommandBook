@@ -2,7 +2,7 @@
   <modelVersion>4.0.0</modelVersion>
   <groupId>org.dynmap</groupId>
   <artifactId>Dynmap-CommandBook</artifactId>
-  <version>0.17</version>
+  <version>0.30</version>
   <build>
   	  <resources>
 		<resource>
@@ -60,8 +60,7 @@
   	<dependency>
   		<groupId>org.dynmap</groupId>
   		<artifactId>dynmap-api</artifactId>
-  		<version>[0.36,)</version>
-  		<scope>compile</scope>
+  		<version>[0.80,)</version>
   	</dependency>
   	<dependency>
   		<groupId>com.sk89q</groupId>
