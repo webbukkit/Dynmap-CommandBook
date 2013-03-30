@@ -35,8 +35,7 @@ import com.zachsthings.libcomponents.ComponentManager;
 import com.zachsthings.libcomponents.bukkit.BukkitComponent;
 
 public class DynmapCommandBookPlugin extends JavaPlugin {
-    private static final Logger log = Logger.getLogger("Minecraft");
-    private static final String LOG_PREFIX = "[Dynmap-CommandBook] ";
+    private static Logger log;
 
     Plugin dynmap;
     DynmapAPI api;
@@ -47,6 +46,11 @@ public class DynmapCommandBookPlugin extends JavaPlugin {
     
     FileConfiguration cfg;
 
+    @Override
+    public void onLoad() {
+        log = this.getLogger();
+    }
+    
     private class OurPlayerListener implements Listener, Runnable {
         @SuppressWarnings("unused")
         @EventHandler(priority=EventPriority.MONITOR)
@@ -189,10 +193,10 @@ public class DynmapCommandBookPlugin extends JavaPlugin {
     boolean stop;
     
     public static void info(String msg) {
-        log.log(Level.INFO, LOG_PREFIX + msg);
+        log.log(Level.INFO, msg);
     }
     public static void severe(String msg) {
-        log.log(Level.SEVERE, LOG_PREFIX + msg);
+        log.log(Level.SEVERE, msg);
     }
 
     private class MarkerUpdate implements Runnable {
