@@ -33,30 +33,6 @@
 					<target>1.6</target>
 				</configuration>
 			</plugin>
-  		<plugin>
-  			<artifactId>maven-assembly-plugin</artifactId>
-				<configuration>
-    				<descriptors>
-        				<descriptor>src/main/assembly/package.xml</descriptor>
-    				</descriptors>
-					<!-- Hack for bug in maven-assembly: http://jira.codehaus.org/browse/MASSEMBLY-449 -->
-					<archiverConfig>
-						<fileMode>420</fileMode> <!-- 420(dec) = 644(oct) -->
-						<directoryMode>493</directoryMode> <!-- 493(dec) = 755(oct) -->
-						<defaultDirectoryMode>493</defaultDirectoryMode>
-					</archiverConfig>
-				</configuration>
-  			
-  			<executions>
-  				<execution>
-  					<id>build</id>
-  					<phase>package</phase>
-  					<goals>
-  						<goal>single</goal>
-  					</goals>
-  				</execution>
-  			</executions>
-  		</plugin>
   	</plugins>
   </build>
        <repositories>
@@ -94,7 +70,7 @@
   		<artifactId>CommandBook</artifactId>
   		<version>2.2</version>
   		<scope>system</scope>
-  		<systemPath>${project.basedir}/CommandBook.jar</systemPath>
+  		<systemPath>${project.basedir}/CommandBook-2.2.jar</systemPath>
   	</dependency>
   </dependencies>
   <properties>
